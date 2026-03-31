@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# uv / virtualenv
+.venv/
+.python-version
+
+# Credentials — never commit these
+.env
+.env.*
+*.env
+config.json
+**/config.json
+icon.png
+**/icon.png
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
+/tmp/voiceprompt*.log
+
+# Pytest
+.pytest_cache/
