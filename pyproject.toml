@@ -5,6 +5,19 @@ description = "macOS menubar app: hold a hotkey, speak, get clean text pasted"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
+authors = [{ name = "Yash Patel", email = "yash@yash-coded.com" }]
+keywords = [
+    "voice", "speech-to-text", "dictation", "transcription",
+    "whisper", "mlx", "macos", "menubar", "productivity",
+    "ai", "gpt", "openai", "apple-silicon",
+]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: MacOS",
+    "Programming Language :: Python :: 3",
+    "Topic :: Utilities",
+    "Topic :: Multimedia :: Sound/Audio :: Speech",
+]
 dependencies = [
     "mlx-whisper",
     "sounddevice",
@@ -15,6 +28,11 @@ dependencies = [
     "pyobjc-framework-quartz",
     "numpy",
 ]
+
+[project.urls]
+Homepage = "https://github.com/yash-coded/voiceprompt"
+Repository = "https://github.com/yash-coded/voiceprompt"
+Issues = "https://github.com/yash-coded/voiceprompt/issues"
 
 [project.scripts]
 voiceprompt = "voiceprompt.app:main"

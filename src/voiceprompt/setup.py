@@ -123,20 +123,22 @@ def _validate_key(key: str) -> bool:
         return False
 
 
-# ── Step 2: Mac type ───────────────────────────────────────────────────────
+# ── Step 2: Admin rights ──────────────────────────────────────────────────
 
 
 def _collect_mac_type() -> bool:
-    """Return True if restricted mode (company Mac)."""
-    print(_c(DIM, "  Both Mac types use the same trigger: hold Right Option ⌥ to record."))
-    print(_c(DIM, "  The only difference is how text gets pasted after transcription:"))
-    print(_c(DIM, "  • Personal Mac  → auto Cmd+V into whatever is focused"))
-    print(_c(DIM, "  • Company Mac   → copied to clipboard; press ⌘V yourself"))
+    """Return True if restricted mode (no admin rights)."""
+    print(_c(DIM, "  This controls how your transcription is delivered after recording:"))
+    print()
+    print(_c(DIM, "  ") + _c(GREEN, "With admin rights") + _c(DIM, "    → text is automatically pasted into"))
+    print(_c(DIM, "                          whatever input box is focused"))
+    print(_c(DIM, "  ") + _c(YELLOW, "Without admin rights") + _c(DIM, " → text is copied to your clipboard;"))
+    print(_c(DIM, "                          press ⌘V to paste it yourself"))
     print()
 
-    is_company = _ask_yes_no("  Is this a company-managed Mac (no admin rights)?", default=False)
+    has_admin = _ask_yes_no("  Do you have admin rights on this Mac?", default=True)
     print()
-    return is_company
+    return not has_admin
 
 
 # ── Step 3: Personal vocabulary ───────────────────────────────────────────
@@ -246,7 +248,7 @@ def main() -> None:
     api_key = _collect_api_key(existing_key)
 
     # ── Step 2 ──────────────────────────────────────────────────────
-    _step(2, total_steps, "Mac Type")
+    _step(2, total_steps, "Admin Rights & Paste Behaviour")
     restricted_mode = _collect_mac_type()
 
     # ── Step 3 ──────────────────────────────────────────────────────
@@ -273,11 +275,9 @@ def main() -> None:
     print()
     print("  Trigger: Hold " + _c(BOLD, "Right Option (⌥)") + " → speak → release")
     if restricted_mode:
-        print("  Mode:    " + _c(YELLOW, "Company Mac") + " — text copied to clipboard")
-        print("  Paste:   Press " + _c(BOLD, "⌘V") + " wherever you want the text")
+        print("  Paste:   " + _c(YELLOW, "Clipboard only") + " — press " + _c(BOLD, "⌘V") + " to paste after recording")
     else:
-        print("  Mode:    " + _c(GREEN, "Personal Mac") + " — text auto-pasted")
-        print("  Paste:   Auto Cmd+V into whatever is focused")
+        print("  Paste:   " + _c(GREEN, "Auto-paste") + " — text appears in the focused input box")
     print()
     print(_c(DIM, "  Logs:     tail -f /tmp/voiceprompt.log"))
     print(_c(DIM, "  Uninstall: voiceprompt-uninstall"))

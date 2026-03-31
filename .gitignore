@@ -19,6 +19,9 @@ config.json
 icon.png
 **/icon.png
 
+# Claude Code session data
+.claude/
+
 # macOS
 .DS_Store
 
