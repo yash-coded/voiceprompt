@@ -229,6 +229,7 @@ class VoicePromptApp(rumps.App):
     def _on_state_change(self, state: State) -> None:
         labels = {
             State.IDLE:       ICON_IDLE,
+            State.WAITING:    ICON_IDLE,      # no visual change — brief hold, no noise
             State.RECORDING:  ICON_RECORDING,
             State.PROCESSING: ICON_PROCESSING,
             State.ERROR:      ICON_ERROR,
