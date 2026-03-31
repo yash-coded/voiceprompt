@@ -68,6 +68,38 @@ def test_transcriber_model_load_failure():
 
 
 # ---------------------------------------------------------------------------
+# test_transcriber_passes_initial_prompt
+# ---------------------------------------------------------------------------
+
+def test_transcriber_passes_initial_prompt():
+    """transcribe() passes initial_prompt to mlx_whisper when provided."""
+    wav = _make_wav()
+
+    mock_mlx = MagicMock()
+    mock_mlx.transcribe.return_value = {"text": "PyTorch training loop"}
+
+    transcriber_mod._model = mock_mlx
+    transcriber_mod.transcribe(wav, initial_prompt="Key terms: PyTorch, CUDA.")
+
+    call_kwargs = mock_mlx.transcribe.call_args[1]
+    assert call_kwargs.get("initial_prompt") == "Key terms: PyTorch, CUDA."
+
+
+def test_transcriber_omits_initial_prompt_when_empty():
+    """transcribe() does not pass initial_prompt when it is empty."""
+    wav = _make_wav()
+
+    mock_mlx = MagicMock()
+    mock_mlx.transcribe.return_value = {"text": "hello"}
+
+    transcriber_mod._model = mock_mlx
+    transcriber_mod.transcribe(wav, initial_prompt="")
+
+    call_kwargs = mock_mlx.transcribe.call_args[1]
+    assert "initial_prompt" not in call_kwargs
+
+
+# ---------------------------------------------------------------------------
 # test_transcriber_empty_audio
 # ---------------------------------------------------------------------------
 

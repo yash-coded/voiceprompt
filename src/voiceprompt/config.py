@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
-from typing import Optional
 
 CONFIG_DIR = Path.home() / ".config" / "voiceprompt"
 CONFIG_FILE = CONFIG_DIR / "config.json"
@@ -16,9 +15,11 @@ class Config:
         self,
         openai_api_key: str,
         restricted_mode: bool,
+        vocabulary: list[str] | None = None,
     ) -> None:
         self.openai_api_key = openai_api_key
         self.restricted_mode = restricted_mode
+        self.vocabulary: list[str] = vocabulary or []
 
     # ------------------------------------------------------------------
     def save(self) -> None:
@@ -28,6 +29,7 @@ class Config:
                 {
                     "openai_api_key": self.openai_api_key,
                     "restricted_mode": self.restricted_mode,
+                    "vocabulary": self.vocabulary,
                 },
                 f,
                 indent=2,
@@ -47,13 +49,14 @@ class Config:
 
         api_key = data.get("openai_api_key") or os.environ.get("OPENAI_API_KEY", "")
         restricted_mode = data.get("restricted_mode", False)
+        vocabulary = data.get("vocabulary", [])
 
         if not api_key:
             raise FileNotFoundError(
                 "No config found. Run 'voiceprompt-setup' to get started."
             )
 
-        return cls(openai_api_key=api_key, restricted_mode=restricted_mode)
+        return cls(openai_api_key=api_key, restricted_mode=restricted_mode, vocabulary=vocabulary)
 
     @classmethod
     def exists(cls) -> bool:

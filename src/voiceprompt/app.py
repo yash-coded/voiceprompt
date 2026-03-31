@@ -17,8 +17,9 @@ import rumps  # type: ignore[import]
 
 from voiceprompt import recorder as rec_module
 from voiceprompt import transcriber
-from voiceprompt.cleaner import Cleaner
+from voiceprompt.cleaner import Cleaner, build_whisper_prompt
 from voiceprompt.config import Config
+from voiceprompt.context import CleanMode, get_frontmost_mode
 from voiceprompt.hotkey import HotkeyListener, State
 
 LOG = logging.getLogger(__name__)
@@ -29,6 +30,20 @@ ICON_PROCESSING = "⏳"
 ICON_ERROR      = "⚠️"
 
 ERROR_RESET_DELAY = 3.0  # seconds before auto-reset from ERROR → IDLE
+
+# Clipboard context: maximum characters to pass to the LLM.
+_CLIPBOARD_CTX_MAX = 500
+
+
+def _read_clipboard_ctx() -> str:
+    """Return current clipboard text (up to _CLIPBOARD_CTX_MAX chars), or ''."""
+    try:
+        text = pyperclip.paste()
+        if not isinstance(text, str) or not text.strip():
+            return ""
+        return text.strip()[:_CLIPBOARD_CTX_MAX]
+    except Exception:  # noqa: BLE001
+        return ""
 
 
 class VoicePromptApp(rumps.App):
@@ -49,11 +64,15 @@ class VoicePromptApp(rumps.App):
 
         self._cfg = cfg
         self._restricted_mode: bool = cfg.restricted_mode
-        self._cleaner = Cleaner(cfg.openai_api_key)
+        self._cleaner = Cleaner(cfg.openai_api_key, vocabulary=cfg.vocabulary)
+        self._whisper_prompt: str = build_whisper_prompt(cfg.vocabulary)
 
         self._record_thread: Optional[rec_module.RecordThread] = None
+        self._current_mode: CleanMode = CleanMode.GENERAL
+        self._clipboard_ctx: str = ""
 
-        self._work_queue: queue.Queue[str] = queue.Queue(maxsize=1)
+        # Work queue carries (wav_path, mode, clipboard_ctx)
+        self._work_queue: queue.Queue[tuple[str, CleanMode, str]] = queue.Queue(maxsize=1)
         self._result_queue: queue.Queue[str] = queue.Queue()
 
         self._temp_files: list[str] = []
@@ -89,7 +108,12 @@ class VoicePromptApp(rumps.App):
     # ------------------------------------------------------------------
 
     def _start_recording(self) -> None:
-        LOG.debug("Starting recording")
+        # Capture both context signals before the microphone opens —
+        # the target app still has focus at this exact moment.
+        self._current_mode = get_frontmost_mode()
+        self._clipboard_ctx = _read_clipboard_ctx()
+        LOG.debug("Starting recording (mode=%s, clipboard=%d chars)",
+                  self._current_mode.name, len(self._clipboard_ctx))
         self._record_thread = rec_module.RecordThread()
         self._record_thread.start()
 
@@ -107,10 +131,17 @@ class VoicePromptApp(rumps.App):
         self._hotkey.set_processing()
 
         threading.Thread(
-            target=self._collect_and_enqueue, args=(rt,), daemon=True
+            target=self._collect_and_enqueue,
+            args=(rt, self._current_mode, self._clipboard_ctx),
+            daemon=True,
         ).start()
 
-    def _collect_and_enqueue(self, rt: Optional[rec_module.RecordThread]) -> None:
+    def _collect_and_enqueue(
+        self,
+        rt: Optional[rec_module.RecordThread],
+        mode: CleanMode,
+        clipboard_ctx: str,
+    ) -> None:
         try:
             if rt:
                 rt.stop()
@@ -120,7 +151,7 @@ class VoicePromptApp(rumps.App):
                 return
             self._temp_files.append(wav_path)
             try:
-                self._work_queue.put_nowait(wav_path)
+                self._work_queue.put_nowait((wav_path, mode, clipboard_ctx))
             except queue.Full:
                 LOG.warning("Work queue full – dropping clip")
                 self._hotkey.set_idle()
@@ -134,14 +165,14 @@ class VoicePromptApp(rumps.App):
 
     def _pipeline_worker(self) -> None:
         while True:
-            wav_path = self._work_queue.get()
+            wav_path, mode, clipboard_ctx = self._work_queue.get()
             try:
-                raw = transcriber.transcribe(wav_path)
+                raw = transcriber.transcribe(wav_path, initial_prompt=self._whisper_prompt)
                 try:
                     self._temp_files.remove(wav_path)
                 except ValueError:
                     pass
-                cleaned = self._cleaner.clean(raw)
+                cleaned = self._cleaner.clean(raw, mode=mode, clipboard_ctx=clipboard_ctx)
                 if cleaned:
                     self._result_queue.put(cleaned)
                 else:

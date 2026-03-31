@@ -25,8 +25,13 @@ def load_model() -> None:
     LOG.info("Whisper model ready")
 
 
-def transcribe(wav_path: str) -> str:
+def transcribe(wav_path: str, initial_prompt: str = "") -> str:
     """Transcribe *wav_path* and delete the file afterwards.
+
+    *initial_prompt* is passed to Whisper as style/vocabulary context.
+    Listing proper nouns and technical terms here (e.g. "PyTorch, kubectl")
+    steers Whisper toward correct spelling and casing without changing the
+    transcription otherwise.
 
     Returns the transcript text (may be empty string for silent audio).
     Raises RuntimeError if the model has not been loaded yet.
@@ -34,9 +39,13 @@ def transcribe(wav_path: str) -> str:
     if _model is None:
         raise RuntimeError("Whisper model not loaded – call load_model() first")
 
-    LOG.debug("Transcribing %s", wav_path)
+    LOG.debug("Transcribing %s (prompt=%r)", wav_path, initial_prompt or "<none>")
+    kwargs: dict[str, Any] = {"path_or_hf_repo": MODEL_NAME}
+    if initial_prompt:
+        kwargs["initial_prompt"] = initial_prompt
+
     try:
-        result = _model.transcribe(wav_path, path_or_hf_repo=MODEL_NAME)
+        result = _model.transcribe(wav_path, **kwargs)
         text: str = result.get("text", "").strip()
         LOG.debug("Transcript: %r", text)
         return text

@@ -139,7 +139,41 @@ def _collect_mac_type() -> bool:
     return is_company
 
 
-# ── Step 3: Install service ────────────────────────────────────────────────
+# ── Step 3: Personal vocabulary ───────────────────────────────────────────
+
+
+def _collect_vocabulary(existing: list[str]) -> list[str]:
+    """Return the user's personal vocabulary list."""
+    print(_c(DIM, "  Add technical terms, product names, or jargon that Whisper"))
+    print(_c(DIM, "  should transcribe accurately (e.g. PyTorch, kubectl, gpt-4o)."))
+    print(_c(DIM, "  These are also used to guide the AI cleanup step."))
+    print()
+
+    if existing:
+        print(f"  Current terms: {_c(CYAN, ', '.join(existing))}")
+        print()
+        action = _ask("  [a]dd more, [r]eplace all, [c]lear, or Enter to keep", default="keep")
+        action = action.lower().strip()
+        if action in ("c", "clear"):
+            _ok("Vocabulary cleared")
+            return []
+        if action not in ("a", "add", "r", "replace"):
+            return existing  # keep as-is
+        if action in ("r", "replace"):
+            existing = []
+
+    raw = _ask("  Terms (comma-separated, or Enter to skip)", default="")
+    if not raw:
+        return existing
+
+    new_terms = [t.strip() for t in raw.split(",") if t.strip()]
+    merged = existing + [t for t in new_terms if t not in existing]
+    if merged:
+        _ok(f"Vocabulary: {', '.join(merged)}")
+    return merged
+
+
+# ── Step 4: Install service ────────────────────────────────────────────────
 
 
 def _install_service(api_key: str, restricted_mode: bool) -> bool:
@@ -195,15 +229,17 @@ def main() -> None:
     # Load existing config if present
     existing_key = ""
     existing_restricted = False
+    existing_vocabulary: list[str] = []
     if Config.exists():
         try:
             cfg = Config.load()
             existing_key = cfg.openai_api_key
             existing_restricted = cfg.restricted_mode
+            existing_vocabulary = cfg.vocabulary
         except Exception:
             pass
 
-    total_steps = 3
+    total_steps = 4
 
     # ── Step 1 ──────────────────────────────────────────────────────
     _step(1, total_steps, "OpenAI API Key")
@@ -214,9 +250,14 @@ def main() -> None:
     restricted_mode = _collect_mac_type()
 
     # ── Step 3 ──────────────────────────────────────────────────────
-    _step(3, total_steps, "Installing background service")
+    _step(3, total_steps, "Personal Vocabulary (optional)")
+    vocabulary = _collect_vocabulary(existing_vocabulary)
+    print()
 
-    cfg = Config(openai_api_key=api_key, restricted_mode=restricted_mode)
+    # ── Step 4 ──────────────────────────────────────────────────────
+    _step(4, total_steps, "Installing background service")
+
+    cfg = Config(openai_api_key=api_key, restricted_mode=restricted_mode, vocabulary=vocabulary)
     cfg.save()
     _ok(f"Config saved to ~/.config/voiceprompt/config.json")
 
