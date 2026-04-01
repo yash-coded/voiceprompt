@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import logging
 import os
+import wave
 from typing import Any
+
+import numpy as np
 
 LOG = logging.getLogger(__name__)
 
@@ -45,7 +48,18 @@ def transcribe(wav_path: str, initial_prompt: str = "") -> str:
         kwargs["initial_prompt"] = initial_prompt
 
     try:
-        result = _model.transcribe(wav_path, **kwargs)
+        with wave.open(wav_path, "rb") as wf:
+            frames = wf.readframes(wf.getnframes())
+            sample_width = wf.getsampwidth()
+            n_channels = wf.getnchannels()
+
+        dtype = np.int16 if sample_width == 2 else np.int32
+        audio = np.frombuffer(frames, dtype=dtype).astype(np.float32)
+        if n_channels > 1:
+            audio = audio.reshape(-1, n_channels).mean(axis=1)
+        audio /= np.iinfo(dtype).max
+
+        result = _model.transcribe(audio, **kwargs)
         text: str = result.get("text", "").strip()
         LOG.debug("Transcript: %r", text)
         return text
