@@ -1,4 +1,4 @@
-"""OpenAI gpt-4o-mini transcript cleaner."""
+"""OpenAI gpt-5-mini transcript cleaner."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ from voiceprompt.vocabulary import VOCABULARY_BY_CATEGORY, WHISPER_VOCABULARY
 LOG = logging.getLogger(__name__)
 
 TIMEOUT = 2.0  # seconds
-MODEL = "gpt-4o-mini"
+MODEL = "gpt-5-mini"
 
 # ---------------------------------------------------------------------------
 # Default vocabulary block — built once at import time from VOCABULARY_BY_CATEGORY.
