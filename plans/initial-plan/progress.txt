@@ -1,3 +1,5 @@
 2026-06-11 | plan | Initial plan created: DESIGN.md + 10 tracer-bullet slices (01 tracer bullet → 10 packaging)
 2026-06-11 | slice-01 | started
 2026-06-11 | slice-01 | done — unit+integration tests pass, model download/reuse verified, app launches; human mic/paste verification pending (HITL)
+2026-06-11 | slice-02 | started
+2026-06-11 | slice-02 | done — 21 new unit tests, full suite passes, app launch smoke OK; live API cleanup pending a real key (HITL), fallback path verified

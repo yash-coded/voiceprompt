@@ -1,6 +1,6 @@
 # 02 — OpenAI Cleanup with Graceful Fallback
 
-Status: ready
+Status: done
 Type: AFK
 Blocked by: 01
 

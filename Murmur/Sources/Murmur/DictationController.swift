@@ -14,9 +14,15 @@ final class DictationController {
     private let recorder = AudioRecorder()
     private let transcriber = Transcriber()
     private let paster = TranscriptPaster()
+    private let cleaner: TranscriptCleaner = OpenAICleaner()
 
     private var monitor: Any?
     private var holdTimer: DispatchWorkItem?
+
+    /// Cleanup context captured at key-press time, while the target app
+    /// still has focus and the clipboard is untouched.
+    private var capturedMode: CleanMode = .general
+    private var capturedClipboard: String = ""
 
     /// Recordings shorter than this are accidental taps — discard, no paste.
     static let minimumClipDuration: TimeInterval = 1.0
@@ -49,6 +55,10 @@ final class DictationController {
     }
 
     private func dispatch(_ event: HotkeyEvent) {
+        if event == .pressed {
+            capturedMode = CleanModeDetector.frontmostMode()
+            capturedClipboard = NSPasteboard.general.string(forType: .string) ?? ""
+        }
         let actions = stateMachine.handle(event, at: ProcessInfo.processInfo.systemUptime)
         for action in actions {
             perform(action)
@@ -87,12 +97,15 @@ final class DictationController {
             return
         }
         stateMachine.setProcessing()
-        Task { [transcriber, paster] in
+        let mode = capturedMode
+        let clipboard = capturedClipboard
+        Task { [transcriber, paster, cleaner] in
             defer { stateMachine.setIdle() }
             do {
                 let text = try await transcriber.transcribe(samples)
                 guard !text.isEmpty else { return }
-                paster.paste(text)
+                let cleaned = await cleaner.clean(text, mode: mode, clipboardContext: clipboard)
+                paster.paste(cleaned)
             } catch {
                 NSLog("Murmur: transcription failed: \(error)")
             }
