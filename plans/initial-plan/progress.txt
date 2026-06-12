@@ -1,0 +1,1 @@
+2026-06-11 | plan | Initial plan created: DESIGN.md + 10 tracer-bullet slices (01 tracer bullet → 10 packaging)
