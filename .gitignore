@@ -31,3 +31,6 @@ icon.png
 
 # Pytest
 .pytest_cache/
+
+# Swift
+Murmur/.build/

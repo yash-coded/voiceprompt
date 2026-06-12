@@ -1,6 +1,6 @@
 # 01 — Tracer Bullet: Dictation Pipeline
 
-Status: ready
+Status: done
 Type: HITL
 Blocked by: None — can start immediately
 
@@ -27,3 +27,12 @@ Insertion ports the Python pipeline's clipboard strategy: save the current clipb
 - Onboarding/permission walkthrough UX — manual permission grants are fine here (slice 09).
 
 ## Comments
+- 2026-06-11: Implemented as SPM executable in `Murmur/`. TDD: 12 unit tests cover the
+  hotkey state machine (0.5s threshold, early-release cancel, stale-timer guard) and
+  clipboard save/set/Cmd-V/restore via a Pasteboard protocol. A gated integration test
+  (`MURMUR_INTEGRATION=1 swift test`) verifies Parakeet v3 download + real transcription
+  of a synthesized WAV; second run confirmed model reuse (0.4s, no re-download). App
+  binary launches and stays resident. The <1s discard checks both key-hold duration and
+  captured-sample duration, matching the Python recorder. Remaining: the human criterion
+  (real mic dictation into TextEdit with mic+Accessibility grants) — agent cannot grant
+  TCC permissions; everything machine-verifiable passed.
