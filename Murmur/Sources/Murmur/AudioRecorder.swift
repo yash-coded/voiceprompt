@@ -1,4 +1,5 @@
 import AVFoundation
+import AudioToolbox
 
 /// Captures microphone audio via AVAudioEngine from the default input device,
 /// converting to 16kHz mono Float32 — the format Parakeet expects.
@@ -8,6 +9,10 @@ final class AudioRecorder {
     /// Called on the audio thread with a 0...1 loudness for each captured chunk,
     /// driving the live waveform. Hop to the main actor before touching UI.
     var onLevel: ((Float) -> Void)?
+
+    /// UID of the input device to capture from. When nil — or when the device
+    /// has disconnected — recording uses the system default input.
+    var preferredDeviceUID: String?
 
     private let engine = AVAudioEngine()
     private var samples: [Float] = []
@@ -26,6 +31,7 @@ final class AudioRecorder {
         samplesLock.withLock { samples = [] }
 
         let input = engine.inputNode
+        applyPreferredDevice(to: input)
         let inputFormat = input.outputFormat(forBus: 0)
         guard
             let targetFormat = AVAudioFormat(
@@ -55,6 +61,18 @@ final class AudioRecorder {
         engine.stop()
         converter = nil
         return samplesLock.withLock { samples }
+    }
+
+    /// Point the engine's input at the chosen device when it is still connected;
+    /// otherwise leave the engine on the system default.
+    private func applyPreferredDevice(to input: AVAudioInputNode) {
+        let available = AudioDevices.inputDevices().map(\.uid)
+        guard let uid = AudioDeviceResolver.resolve(chosen: preferredDeviceUID, available: available),
+              var deviceID = AudioDevices.deviceID(forUID: uid),
+              let unit = input.audioUnit else { return }
+        AudioUnitSetProperty(
+            unit, kAudioOutputUnitProperty_CurrentDevice, kAudioUnitScope_Global, 0,
+            &deviceID, UInt32(MemoryLayout<AudioDeviceID>.size))
     }
 
     private func append(_ buffer: AVAudioPCMBuffer, from inputFormat: AVAudioFormat, to targetFormat: AVAudioFormat) {

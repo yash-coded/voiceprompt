@@ -10,12 +10,17 @@ import Observation
 final class DictationController {
     private(set) var state: HotkeyState = .idle
 
+    private let settings: Settings
     private let stateMachine = HotkeyStateMachine()
     private let recorder = AudioRecorder()
     private let transcriber = Transcriber()
     private let paster = TranscriptPaster()
     private let cleaner: TranscriptCleaner = OpenAICleaner()
     private let pill = WaveformPillController()
+
+    init(settings: Settings = .shared) {
+        self.settings = settings
+    }
 
     private var monitor: Any?
     private var holdTimer: DispatchWorkItem?
@@ -28,8 +33,6 @@ final class DictationController {
     /// Recordings shorter than this are accidental taps — discard, no paste.
     static let minimumClipDuration: TimeInterval = 1.0
 
-    private static let rightOptionKeyCode: UInt16 = 61
-
     func start() {
         pill.installFloatingPanel()
         stateMachine.onStateChange = { [weak self] newState in
@@ -41,11 +44,16 @@ final class DictationController {
         recorder.onLevel = { [weak self] level in
             Task { @MainActor in self?.pill.push(level: level) }
         }
+        // Reads the configured modifier live on every event, so changing the
+        // hotkey in Settings takes effect on the next press without rebinding.
         monitor = NSEvent.addGlobalMonitorForEvents(matching: .flagsChanged) { [weak self] event in
-            guard event.keyCode == Self.rightOptionKeyCode else { return }
-            let pressed = event.modifierFlags.contains(.option)
+            let keyCode = event.keyCode
+            let flags = event.modifierFlags
             Task { @MainActor in
-                self?.dispatch(pressed ? .pressed : .released)
+                guard let self,
+                      let pressed = self.settings.hotkeyModifier.pressState(
+                        keyCode: keyCode, flags: flags) else { return }
+                self.dispatch(pressed ? .pressed : .released)
             }
         }
         // Warm up the model in the background so the first dictation is fast.
@@ -80,11 +88,12 @@ final class DictationController {
                 self?.dispatch(.holdTimerFired)
             }
             holdTimer = timer
-            DispatchQueue.main.asyncAfter(deadline: .now() + holdThreshold, execute: timer)
+            DispatchQueue.main.asyncAfter(deadline: .now() + settings.holdThreshold, execute: timer)
         case .cancelHoldTimer:
             holdTimer?.cancel()
             holdTimer = nil
         case .startRecording:
+            recorder.preferredDeviceUID = settings.inputDeviceUID
             do {
                 try recorder.start()
             } catch {
@@ -107,12 +116,15 @@ final class DictationController {
         stateMachine.setProcessing()
         let mode = capturedMode
         let clipboard = capturedClipboard
+        let cleanupEnabled = settings.cleanupEnabled
         Task { [transcriber, paster, cleaner] in
             defer { stateMachine.setIdle() }
             do {
                 let text = try await transcriber.transcribe(samples)
                 guard !text.isEmpty else { return }
-                let cleaned = await cleaner.clean(text, mode: mode, clipboardContext: clipboard)
+                let cleaned = cleanupEnabled
+                    ? await cleaner.clean(text, mode: mode, clipboardContext: clipboard)
+                    : text
                 paster.paste(cleaned)
             } catch {
                 NSLog("Murmur: transcription failed: \(error)")

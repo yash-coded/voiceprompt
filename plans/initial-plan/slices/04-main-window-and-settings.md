@@ -1,6 +1,6 @@
 # 04 — Main Window and Settings
 
-Status: ready
+Status: done
 Type: AFK
 Blocked by: 02
 
@@ -23,3 +23,16 @@ The Settings section is fully working: an audio input device picker (lists live 
 - Login-item / launch-at-startup behavior.
 
 ## Comments
+2026-06-20 — Implemented. `Settings` is an `@Observable` write-through store
+over UserDefaults (single source of truth); API key stays in the Keychain. The
+`DictationController` reads settings live on each event, so hotkey/threshold/
+device/cleanup changes apply on the next dictation with no restart and no
+listener rebind. Audio device selection resolves the chosen UID against the
+live device list (`AudioDeviceResolver`), falling back to the system default
+when it disconnects. Main window is a `NavigationSplitView` with 5 sections;
+only Settings is functional (others are `ContentUnavailableView` placeholders
+for slices 05–08). Removed slice-02's debug API-key NSAlert.
+Testable kernels covered by 12 new unit tests (Settings defaults/persistence,
+HotkeyModifier matching, HistoryRetention mapping, AudioDeviceResolver
+fallback). SwiftUI views and live device switching are visual/HITL — full
+suite 71/71, app launch smoke OK.
