@@ -33,20 +33,22 @@ needs a one-time bypass. Pick whichever path you prefer.
 
 ### Homebrew (recommended)
 
-Murmur is ad-hoc-signed, so install with quarantine skipped to avoid the
-Gatekeeper prompt on first launch:
-
 ```bash
-HOMEBREW_CASK_OPTS="--no-quarantine" brew install --cask yash-coded/tap/murmur
+brew install --cask yash-coded/tap/murmur
 ```
 
-Plain `brew install --cask yash-coded/tap/murmur` also works, but macOS will
-block the first launch with *"Apple could not verify Murmur is free of
-malware."* If that happens, click **Done** (not *Move to Trash*), then approve
-Murmur under **System Settings → Privacy & Security → Open Anyway**.
+Murmur is ad-hoc-signed, so macOS quarantines it like any download and blocks
+the first launch with *"Apple could not verify Murmur is free of malware."*
+This is expected — current Homebrew no longer honours `--no-quarantine`, so the
+app is always quarantined on install. Approve it once, either way:
 
-(Recent Homebrew removed the bare `--no-quarantine` install flag; the
-`HOMEBREW_CASK_OPTS` form above is the current equivalent.)
+- Click **Done** (not *Move to Trash*), then open **System Settings → Privacy &
+  Security** and click **Open Anyway** next to the Murmur message; **or**
+- clear the quarantine flag from a terminal:
+
+  ```bash
+  xattr -dr com.apple.quarantine /Applications/Murmur.app
+  ```
 
 ### Direct download
 
