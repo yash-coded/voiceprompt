@@ -1,0 +1,33 @@
+name: Release
+
+# Push a tag like v0.1.0 to build the .dmg and publish a GitHub Release.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-latest   # Apple Silicon build for FluidAudio
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build ad-hoc-signed .dmg
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          scripts/build-dmg.sh "$VERSION"
+
+      - name: Verify artifact
+        run: scripts/verify-dmg.sh "${GITHUB_REF_NAME#v}"
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          gh release create "$GITHUB_REF_NAME" \
+            "dist/Murmur-$VERSION.dmg" \
+            --title "Murmur $VERSION" \
+            --generate-notes

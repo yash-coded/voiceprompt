@@ -1,19 +1,22 @@
-# VoicePrompt
+# Murmur
 
 **Tired of typing long prompts? Hold a key, speak, release — clean text appears instantly.**
 
-VoicePrompt is a macOS menubar app that turns your voice into polished text and pastes it directly into whatever you're focused on. It runs fully local transcription on Apple Silicon using Whisper, then cleans the transcript with GPT-4o-mini — removing filler words, fixing grammar, and adapting the tone to the app you're using.
+Murmur is a native macOS menubar app that turns your voice into polished text and
+pastes it into whatever you're focused on. Transcription runs fully locally on
+Apple Silicon ([FluidAudio Parakeet TDT v3](https://github.com/FluidInference/FluidAudio));
+the transcript is then optionally cleaned with OpenAI — removing filler words,
+fixing grammar, and adapting tone to the app you're in.
 
 [![CI](https://github.com/yash-coded/voiceprompt/actions/workflows/ci.yml/badge.svg)](https://github.com/yash-coded/voiceprompt/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
-[![Platform: macOS Apple Silicon](https://img.shields.io/badge/platform-macOS%20Apple%20Silicon-lightgrey.svg)](https://support.apple.com/en-us/HT211814)
+[![Platform: macOS Apple Silicon](https://img.shields.io/badge/platform-macOS%20Sequoia%20%C2%B7%20Apple%20Silicon-lightgrey.svg)](https://support.apple.com/en-us/HT211814)
 
 ---
 
 ## How it works
 
-1. Hold **Right Option (⌥)** for 0.5 seconds
+1. Hold **Right Option (⌥)**
 2. Speak naturally — filler words, false starts, anything
 3. Release — your words are transcribed, cleaned, and pasted
 
@@ -21,137 +24,112 @@ No wake word. No window switching. Works in any app.
 
 ---
 
-## Features
+## Install
 
-### Context-aware cleanup
-VoicePrompt detects which app is focused and applies the right cleanup style automatically:
+Murmur requires **macOS 15 (Sequoia) or later on Apple Silicon (M1+)**.
 
-| App | Mode | Behaviour |
-|-----|------|-----------|
-| Claude, VS Code, iTerm2, Warp, Cursor | **Technical** | Preserves every technical detail exactly — variable names, CLI flags, model names, file paths. Removes filler only. |
-| Slack, Teams, Outlook, Mail | **Professional** | Removes fillers, fixes grammar, keeps tone friendly and natural. |
-| iMessage, WhatsApp, Discord, Telegram | **Casual** | Minimal touch — strips only `um/uh`, preserves your speaking style and converts spoken emoji descriptions to real emoji. |
-| Everything else | **General** | Balanced cleanup. |
+Because Murmur is ad-hoc-signed (no paid Apple Developer ID), macOS Gatekeeper
+needs a one-time bypass. Pick whichever path you prefer.
 
-### Local transcription, no audio leaves your machine
-Transcription runs on-device using [mlx-whisper](https://github.com/ml-explore/mlx-examples) — your audio is never sent to any server. Only the text transcript is sent to OpenAI for cleanup.
+### Homebrew (recommended)
 
-### Built-in software engineering vocabulary
-Over 400 technical terms are pre-loaded — `TypeScript`, `kubectl`, `PostgreSQL`, `useEffect`, `Next.js`, `gRPC`, `Terraform`, `LangChain`, and more. Whisper uses these to spell them correctly. The cleanup model uses them to preserve exact casing and hyphenation.
-
-### Personal vocabulary
-Add your own terms during setup: project names, internal tools, unusual acronyms. Stored locally in `~/.config/voiceprompt/config.json`.
-
-### Clipboard context
-Whatever is in your clipboard when you start speaking is silently passed to the cleanup model as context. If you copy a function signature before dictating a comment about it, the model aligns terminology automatically.
-
----
-
-## Requirements
-
-- macOS on Apple Silicon (M1 or later)
-- Python 3.10+
-- [uv](https://github.com/astral-sh/uv) — fast Python package manager
-- OpenAI API key (for cleanup — transcription is local)
-
----
-
-## Installation
+The cask passes `--no-quarantine`, so Gatekeeper never blocks it:
 
 ```bash
-git clone https://github.com/yash-coded/voiceprompt
-cd voiceprompt
-uv sync
-uv run voiceprompt-setup
+brew install --cask --no-quarantine yash-coded/tap/murmur
 ```
 
-The setup wizard walks you through:
-1. OpenAI API key
-2. Paste behaviour (auto-paste vs clipboard-only, depending on admin rights)
-3. Personal vocabulary
-4. Installing as a background service (starts at login)
+### Direct download
+
+1. Download the latest `Murmur-<version>.dmg` from
+   [Releases](https://github.com/yash-coded/voiceprompt/releases).
+2. Open the `.dmg` and drag **Murmur** to **Applications**.
+3. Launch it. macOS will warn that it's from an unidentified developer.
+4. Open **System Settings → Privacy & Security**, scroll to the message about
+   Murmur being blocked, and click **Open Anyway**. Confirm once more.
+
+You only need to do this on first launch.
 
 ---
 
-## Usage
+## First run
 
-If you installed via the setup wizard, VoicePrompt runs automatically at login. The menubar icon shows the current state:
+A short setup wizard walks you through everything:
+
+1. **Microphone access** — required; transcription is local, no audio leaves your Mac.
+2. **Speech model download** — a one-time ~600 MB download, cached for future runs.
+3. **Accessibility access** — lets Murmur paste text into the focused app via ⌘V.
+4. **OpenAI API key** *(optional)* — enables AI cleanup. Skip it and Murmur pastes
+   the raw transcript. Stored in your macOS Keychain, never on disk.
+5. **Try it** — hold Right Option and dictate a test sentence.
+
+After setup, Murmur lives in the menubar. The icon shows the current state:
 
 | Icon | State |
 |------|-------|
-| 🎙 | Idle, ready to record |
-| 🔴 | Recording |
-| ⏳ | Transcribing and cleaning |
-| ⚠️ | Error (auto-clears after 3 s) |
+| 🎙 `mic` | Idle, ready |
+| 🔴 `mic.fill` | Recording |
+| ⏳ `hourglass` | Transcribing / cleaning |
 
-**Trigger:** hold **Right Option (⌥)** for 0.5 seconds, speak, release.
-
-To run manually without the service:
-```bash
-uv run voiceprompt
-```
-
-To re-run setup (update API key, paste mode, or vocabulary):
-```bash
-uv run voiceprompt-setup
-```
-
-To uninstall the background service:
-```bash
-uv run voiceprompt-uninstall
-```
+Re-run the wizard anytime from **Settings → Run setup again…**.
 
 ---
 
-## Configuration
+## Features
 
-All config is stored at `~/.config/voiceprompt/config.json` and never committed to git.
+### Context-aware cleanup
+Murmur detects the focused app and applies the right cleanup style automatically —
+**Technical** (preserves code, flags, file paths), **Professional**, **Casual**, or
+**General**. Per-app modes and the prompts behind each are editable in **Settings**.
 
-| Environment variable | Default | Description |
-|----------------------|---------|-------------|
-| `OPENAI_API_KEY` | *(from config)* | OpenAI API key — set during setup |
-| `LOG_LEVEL` | `WARNING` | Python logging level (`DEBUG`, `INFO`, `WARNING`) |
+### Local transcription
+Audio is transcribed on-device with FluidAudio's Parakeet TDT v3 model. Nothing
+is uploaded. Only the resulting text is sent to OpenAI when cleanup is enabled.
 
----
+### Personal dictionary
+Add project names, internal tools, or acronyms. Plain terms guide the cleanup
+model's spelling; replacement pairs rewrite the transcript before cleanup so they
+survive even when cleanup is off or offline.
 
-## Architecture
-
-```
-NSEvent (main thread)          worker thread              main thread (rumps)
-─────────────────────          ─────────────              ──────────────────
-Right Option held 0.5s →       pulls (wav, mode, ctx)     Timer (100 ms) polls
-  detect frontmost app →         transcribe (mlx-whisper)  result_queue →
-  read clipboard ctx   →         clean (gpt-4o-mini)         pyperclip.copy
-  start RecordThread   →         push to result_queue        osascript Cmd+V
-Right Option released →
-  stop RecordThread
-  push to work_queue
-```
-
-**Key design decisions:**
-- NSEvent `FlagsChanged` monitor requires no Input Monitoring permission (same mechanism as Claude Desktop's double-⌥ trigger)
-- 0.5-second hold threshold prevents accidental triggers
-- Context detection (`NSWorkspace.frontmostApplication`) happens at key-press time while the target app still has focus
-- Vocabulary block is in the OpenAI `system` message — cached automatically after the first request for ~40% cost reduction
+### History & stats
+Optional local SQLite history (off / 7 days / 30 days / forever) with search and
+one-click copy, plus a dashboard of words dictated and time saved.
 
 ---
 
-## Development
+## Build from source
 
 ```bash
-uv sync --extra dev
-uv run pytest
-uv run pytest --tb=short -v   # verbose
-LOG_LEVEL=DEBUG uv run voiceprompt  # run with debug logging
+swift build --package-path Murmur            # build
+swift test  --package-path Murmur            # run the test suite
+scripts/build-dmg.sh                         # produce dist/Murmur-<version>.dmg
+scripts/verify-dmg.sh                         # QA-check the produced .dmg
 ```
+
+### Cutting a release
+Bump `VERSION`, then push a matching tag:
+
+```bash
+git tag v$(cat VERSION) && git push origin v$(cat VERSION)
+```
+
+The [release workflow](.github/workflows/release.yml) builds the ad-hoc-signed
+`.dmg` on a macOS runner and attaches it to a new GitHub Release. Then update
+`Casks/murmur.rb` with the new `version` and `sha256` (printed by
+`scripts/build-dmg.sh`).
+
+---
+
+## Legacy Python CLI
+
+The original Python implementation lives under `src/voiceprompt/` and remains as a
+reference spec until Murmur reaches full parity. See its history in the git log.
 
 ---
 
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).
-
----
 
 ## License
 

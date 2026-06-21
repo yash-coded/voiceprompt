@@ -1,6 +1,6 @@
 # 10 — Packaging and Distribution
 
-Status: ready
+Status: done
 Type: HITL
 Blocked by: 09
 
@@ -23,3 +23,16 @@ Rewrite the README for the GUI app: what Murmur is, install instructions for bot
 - Removing the legacy Python source (stays as reference spec until parity is confirmed).
 
 ## Comments
+
+2026-06-21 — Implemented. `scripts/build-dmg.sh` builds release, assembles an
+ad-hoc-signed `Murmur.app` (Info.plist with bundle id `io.github.yash-coded.murmur`,
+`LSUIElement`, `NSMicrophoneUsageDescription`), and packages a versioned
+`dist/Murmur-<version>.dmg` with an /Applications drag target; version comes from
+the `VERSION` file. `scripts/verify-dmg.sh` is the automated QA gate (mounts the
+dmg, asserts bundle structure, ad-hoc signature, and Info.plist keys) — ran green
+on the produced 0.1.0 dmg, and the packaged app launches without crashing.
+`.github/workflows/release.yml` builds + verifies + publishes the dmg on a `v*`
+tag. `Casks/murmur.rb` installs via `brew install --cask --no-quarantine`. README
+rewritten for the GUI app (both install paths incl. Gatekeeper "Open Anyway",
+first-run wizard, build-from-source). Remaining HITL: install the dmg on a clean
+machine, pass Gatekeeper, complete onboarding, perform a real dictation.
