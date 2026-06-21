@@ -4,10 +4,17 @@ import SwiftUI
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     static let controller = DictationController()
+    static let onboarding = OnboardingWindowController()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        AVCaptureDevice.requestAccess(for: .audio) { _ in }
         Self.controller.start()
+        // First launch runs the wizard, which requests mic/accessibility itself;
+        // afterwards it only appears when re-run from Settings.
+        if !Settings.shared.onboardingCompleted {
+            Self.onboarding.show()
+        } else {
+            AVCaptureDevice.requestAccess(for: .audio) { _ in }
+        }
     }
 }
 

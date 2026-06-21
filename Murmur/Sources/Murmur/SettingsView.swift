@@ -50,6 +50,10 @@ struct SettingsView: View {
                     }
                 }
             }
+
+            Section("Setup") {
+                Button("Run setup again…") { AppDelegate.onboarding.show() }
+            }
         }
         .formStyle(.grouped)
         .onAppear { devices = AudioDevices.inputDevices() }

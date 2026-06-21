@@ -92,6 +92,9 @@ final class Settings {
     var holdThreshold: TimeInterval { didSet { defaults.set(holdThreshold, forKey: Keys.holdThreshold) } }
     var cleanupEnabled: Bool { didSet { defaults.set(cleanupEnabled, forKey: Keys.cleanupEnabled) } }
     var historyRetention: HistoryRetention { didSet { defaults.set(historyRetention.rawValue, forKey: Keys.historyRetention) } }
+    /// `false` until the onboarding wizard finishes, so it auto-runs on the
+    /// first launch only and can be re-run on demand from Settings.
+    var onboardingCompleted: Bool { didSet { defaults.set(onboardingCompleted, forKey: Keys.onboardingCompleted) } }
 
     private let defaults: UserDefaults
 
@@ -104,6 +107,7 @@ final class Settings {
         cleanupEnabled = defaults.object(forKey: Keys.cleanupEnabled) as? Bool ?? true
         historyRetention = defaults.string(forKey: Keys.historyRetention)
             .flatMap(HistoryRetention.init) ?? .thirtyDays
+        onboardingCompleted = defaults.bool(forKey: Keys.onboardingCompleted)
     }
 
     private enum Keys {
@@ -112,5 +116,6 @@ final class Settings {
         static let holdThreshold = "holdThreshold"
         static let cleanupEnabled = "cleanupEnabled"
         static let historyRetention = "historyRetention"
+        static let onboardingCompleted = "onboardingCompleted"
     }
 }
