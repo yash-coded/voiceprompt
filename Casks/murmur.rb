@@ -1,9 +1,10 @@
 # Homebrew cask for Murmur.
 #
-# Murmur is ad-hoc-signed (no Apple Developer ID), so install with the
-# --no-quarantine flag to skip Gatekeeper:
+# Murmur is ad-hoc-signed (no Apple Developer ID). Recent Homebrew removed the
+# bare `--no-quarantine` install flag, so either do the one-time Gatekeeper
+# "Open Anyway" after installing, or skip quarantine up front:
 #
-#   brew install --cask --no-quarantine yash-coded/tap/murmur
+#   HOMEBREW_CASK_OPTS="--no-quarantine" brew install --cask yash-coded/tap/murmur
 #
 # Per release: bump `version` and replace `sha256` with the value printed by
 # scripts/build-dmg.sh (or `shasum -a 256` of the published .dmg).
