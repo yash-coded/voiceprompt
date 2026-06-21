@@ -24,7 +24,10 @@ jobs:
       - name: Install dependencies
         run: uv sync --extra dev
 
-      - name: Run tests
+      - name: Run Python reference tests
         env:
           OPENAI_API_KEY: sk-test-ci-dummy
         run: uv run pytest --tb=short -q
+
+      - name: Run Murmur (Swift) tests
+        run: swift test --package-path Murmur

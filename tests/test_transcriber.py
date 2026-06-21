@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import tempfile
+import wave
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -12,9 +13,19 @@ import voiceprompt.transcriber as transcriber_mod
 
 
 def _make_wav() -> str:
-    """Create a dummy WAV temp file and return its path."""
+    """Create a valid mono 16-bit WAV temp file and return its path.
+
+    transcribe() opens the file with ``wave.open`` before handing the samples
+    to the (mocked) model, so the fixture must be a structurally valid WAV —
+    an empty file raises ``EOFError`` in the wave parser.
+    """
     fd, path = tempfile.mkstemp(suffix=".wav")
     os.close(fd)
+    with wave.open(path, "wb") as wf:
+        wf.setnchannels(1)
+        wf.setsampwidth(2)
+        wf.setframerate(16000)
+        wf.writeframes(b"\x00\x00" * 1600)  # 0.1s of silence
     return path
 
 
