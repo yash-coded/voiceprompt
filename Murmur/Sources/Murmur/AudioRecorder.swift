@@ -14,6 +14,13 @@ final class AudioRecorder {
     /// has disconnected — recording uses the system default input.
     var preferredDeviceUID: String?
 
+    /// Whether microphone access is granted. Injectable for tests; defaults to
+    /// the live TCC status. Recording without authorization would crash the
+    /// audio engine with an uncatchable Obj-C exception, so start() refuses it.
+    var isMicAuthorized: () -> Bool = {
+        AVCaptureDevice.authorizationStatus(for: .audio) == .authorized
+    }
+
     private let engine = AVAudioEngine()
     private var samples: [Float] = []
     private let samplesLock = NSLock()
@@ -28,20 +35,20 @@ final class AudioRecorder {
     }
 
     func start() throws {
+        // Without mic permission the input node still reports a plausible format,
+        // but installTap/engine.start then raises an uncatchable Obj-C exception.
+        // Authorization is the reliable signal, so bail before touching the engine.
+        guard isMicAuthorized() else {
+            throw NSError(
+                domain: "Murmur", code: 3,
+                userInfo: [NSLocalizedDescriptionKey:
+                    "Microphone access not granted — enable Murmur under System Settings → Privacy & Security → Microphone."])
+        }
         samplesLock.withLock { samples = [] }
 
         let input = engine.inputNode
         applyPreferredDevice(to: input)
         let inputFormat = input.outputFormat(forBus: 0)
-        // A 0-channel / 0-rate input format means the mic is unavailable (e.g.
-        // permission not granted). installTap would then throw an uncatchable
-        // Obj-C exception, so reject it up front as a normal Swift error.
-        guard inputFormat.channelCount > 0, inputFormat.sampleRate > 0 else {
-            throw NSError(
-                domain: "Murmur", code: 2,
-                userInfo: [NSLocalizedDescriptionKey:
-                    "Microphone unavailable — grant Microphone access to Murmur in System Settings → Privacy & Security."])
-        }
         guard
             let targetFormat = AVAudioFormat(
                 commonFormat: .pcmFormatFloat32,

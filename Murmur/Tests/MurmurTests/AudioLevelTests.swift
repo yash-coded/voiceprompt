@@ -38,4 +38,15 @@ struct AudioLevelTests {
     func clampsAboveOne() {
         #expect(AudioRecorder.level(of: [Float](repeating: 3, count: 64)) == 1)
     }
+
+    @Test("start() throws instead of touching the engine when mic is unauthorized")
+    func startRefusesWithoutMicAuth() {
+        let recorder = AudioRecorder()
+        recorder.isMicAuthorized = { false }
+        // Must throw a catchable Swift error — never reach installTap, which
+        // raises an uncatchable Obj-C exception (SIGABRT) without permission.
+        #expect(throws: (any Error).self) {
+            try recorder.start()
+        }
+    }
 }
