@@ -1,6 +1,6 @@
 # 06 — Dictionary Manager
 
-Status: ready
+Status: done
 Type: AFK
 Blocked by: 04
 
@@ -22,3 +22,13 @@ On first use, migrate any existing personal terms from the legacy Python config 
 - Import/export of dictionaries beyond the one-time legacy migration.
 
 ## Comments
+2026-06-20: Implemented. `DictionaryStore` (JSON-backed, observable) + pure
+`PersonalDictionary` helpers + `DictionaryTerm` value type. Plain terms inject
+into the cleanup system prompt (ported Python's user-vocab line); replacement
+pairs rewrite the transcript whole-word/case-insensitive in the controller
+*before* cleanup, so they survive the cleaned, raw, and fallback paths. Legacy
+`~/.config/voiceprompt/config.json` `vocabulary` migrates once on first launch
+(read-only; never modified) — "once" is enforced by the saved dictionary.json
+existing. Duplicates merge case-insensitively, updating the replacement source.
+DictionaryView wired into the sidebar. 14 new tests; full suite 98/98; app
+launch smoke OK. Live UI interaction pending HITL.

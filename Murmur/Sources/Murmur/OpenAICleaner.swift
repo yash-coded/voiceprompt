@@ -3,7 +3,8 @@ import Foundation
 /// Seam for transcript cleanup so a local-LLM cleaner can be slotted in later.
 /// Implementations never throw: on any failure they return the raw transcript.
 protocol TranscriptCleaner: Sendable {
-    func clean(_ transcript: String, mode: CleanMode, clipboardContext: String) async -> String
+    func clean(_ transcript: String, mode: CleanMode, clipboardContext: String,
+               personalTerms: [String]) async -> String
 }
 
 /// Cleans transcripts via OpenAI gpt-5-mini. Gracefully degrades: missing
@@ -22,7 +23,8 @@ struct OpenAICleaner: TranscriptCleaner {
         try await URLSession.shared.data(for: request)
     }
 
-    func clean(_ transcript: String, mode: CleanMode, clipboardContext: String) async -> String {
+    func clean(_ transcript: String, mode: CleanMode, clipboardContext: String,
+               personalTerms: [String] = []) async -> String {
         guard !transcript.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
               let apiKey = apiKeyProvider(), !apiKey.isEmpty else {
             return transcript
@@ -35,7 +37,7 @@ struct OpenAICleaner: TranscriptCleaner {
         let body: [String: Any] = [
             "model": Self.model,
             "messages": [
-                ["role": "system", "content": CleanupPrompts.systemPrompt(for: mode)],
+                ["role": "system", "content": CleanupPrompts.systemPrompt(for: mode, personalTerms: personalTerms)],
                 ["role": "user", "content": CleanupPrompts.userMessage(
                     transcript: transcript, clipboardContext: clipboardContext)],
             ],

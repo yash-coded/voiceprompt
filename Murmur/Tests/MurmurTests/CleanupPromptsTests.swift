@@ -10,6 +10,16 @@ import Testing
         }
     }
 
+    @Test func personalTermsAppearInPrompt() {
+        let prompt = CleanupPrompts.systemPrompt(for: .casual, personalTerms: ["Murmur", "Parakeet"])
+        #expect(prompt.contains("preserve these personal terms exactly as written: Murmur, Parakeet."))
+    }
+
+    @Test func emptyPersonalTermsMatchBasePrompt() {
+        #expect(CleanupPrompts.systemPrompt(for: .technical, personalTerms: [])
+            == CleanupPrompts.systemPrompt(for: .technical))
+    }
+
     @Test func vocabularyOmittedForCasual() {
         let prompt = CleanupPrompts.systemPrompt(for: .casual)
         #expect(!prompt.contains("Software engineering vocabulary"))

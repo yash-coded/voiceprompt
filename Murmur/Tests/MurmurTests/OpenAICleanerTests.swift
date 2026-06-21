@@ -51,6 +51,23 @@ private func okResponse(content: String) -> (Data, URLResponse) {
         #expect(request!.timeoutInterval == 2.0)
     }
 
+    @Test func personalTermsFlowIntoSystemPrompt() async throws {
+        let captured = Captured()
+        var cleaner = OpenAICleaner()
+        cleaner.apiKeyProvider = { "sk-test" }
+        cleaner.transport = { request in
+            await captured.set(request)
+            return okResponse(content: "ok")
+        }
+        _ = await cleaner.clean("hello", mode: .technical, clipboardContext: "",
+                                personalTerms: ["Murmur", "Parakeet"])
+
+        let request = await captured.get()
+        let body = try JSONSerialization.jsonObject(with: request!.httpBody!) as! [String: Any]
+        let messages = body["messages"] as! [[String: String]]
+        #expect(messages[0]["content"]!.contains("Murmur, Parakeet"))
+    }
+
     @Test func noKeyReturnsRawTranscript() async {
         var cleaner = OpenAICleaner()
         cleaner.apiKeyProvider = { nil }

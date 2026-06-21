@@ -11,6 +11,7 @@ final class DictationController {
     private(set) var state: HotkeyState = .idle
 
     private let settings: Settings
+    private let dictionary: DictionaryStore
     private let stateMachine = HotkeyStateMachine()
     private let recorder = AudioRecorder()
     private let transcriber = Transcriber()
@@ -18,8 +19,9 @@ final class DictationController {
     private let cleaner: TranscriptCleaner = OpenAICleaner()
     private let pill = WaveformPillController()
 
-    init(settings: Settings = .shared) {
+    init(settings: Settings = .shared, dictionary: DictionaryStore = .shared) {
         self.settings = settings
+        self.dictionary = dictionary
     }
 
     private var monitor: Any?
@@ -121,14 +123,19 @@ final class DictationController {
         let app = capturedApp
         let cleanupEnabled = settings.cleanupEnabled
         let retention = settings.historyRetention
+        let dictTerms = dictionary.terms
         Task { [transcriber, paster, cleaner] in
             defer { stateMachine.setIdle() }
             do {
                 let text = try await transcriber.transcribe(samples)
                 guard !text.isEmpty else { return }
+                // Replacement pairs apply before cleanup so they survive both the
+                // cleaned path and the raw/fallback path (cleanup off or offline).
+                let replaced = PersonalDictionary.applyReplacements(dictTerms, to: text)
                 let cleaned = cleanupEnabled
-                    ? await cleaner.clean(text, mode: mode, clipboardContext: clipboard)
-                    : text
+                    ? await cleaner.clean(replaced, mode: mode, clipboardContext: clipboard,
+                                          personalTerms: PersonalDictionary.promptTerms(dictTerms))
+                    : replaced
                 paster.paste(cleaned)
                 HistoryStore.shared.record(
                     raw: text, cleaned: cleanupEnabled ? cleaned : nil,

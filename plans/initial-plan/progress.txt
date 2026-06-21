@@ -9,3 +9,5 @@
 2026-06-20 | slice-04 | done — main window sidebar shell + functional Settings (device picker w/ disconnect fallback, live hotkey/threshold, Keychain API key, cleanup toggle, 30d retention default); slice-02 debug key removed; 12 new unit tests, full suite 71/71, app launch smoke OK; live device-switch/visual pending HITL
 2026-06-20 | slice-05 | started
 2026-06-20 | slice-05 | done — SQLite history (system SQLite3, no new dep) w/ retention enforcement (off=no write, 7d/30d prune, forever keep); searchable HistoryView w/ copy raw/cleaned + delete + clear all; 13 new tests, full suite 84/84, app launch smoke OK; live UI/copy/delete pending HITL
+2026-06-20 | slice-06 | started
+2026-06-20 | slice-06 | done — Dictionary manager: JSON-backed DictionaryStore + pure PersonalDictionary helpers; plain terms feed cleanup prompt, replacement pairs rewrite transcript pre-cleanup (survive off/fallback/offline), one-time legacy config.json migration (read-only), case-insensitive duplicate merge; DictionaryView in sidebar; 14 new tests, full suite 98/98, app launch smoke OK; live UI pending HITL

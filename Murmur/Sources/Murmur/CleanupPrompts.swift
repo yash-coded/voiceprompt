@@ -73,10 +73,16 @@ enum CleanupPrompts {
     ]
 
     /// Static per-mode system message (identical across requests → cacheable).
-    static func systemPrompt(for mode: CleanMode) -> String {
+    /// `personalTerms` are the user's plain dictionary entries; they are listed
+    /// in every mode so their spelling and casing survive cleanup.
+    static func systemPrompt(for mode: CleanMode, personalTerms: [String] = []) -> String {
         var parts: [String] = []
         if modesWithVocabulary.contains(mode) {
             parts.append(vocabularyBlock)
+        }
+        if !personalTerms.isEmpty {
+            parts.append("Also preserve these personal terms exactly as written: "
+                + personalTerms.joined(separator: ", ") + ".\n\n")
         }
         parts.append(promptBodies[mode]!)
         return parts.joined()
