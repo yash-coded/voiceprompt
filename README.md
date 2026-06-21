@@ -31,18 +31,19 @@ Murmur requires **macOS 15 (Sequoia) or later on Apple Silicon (M1+)**.
 Because Murmur is ad-hoc-signed (no paid Apple Developer ID), macOS Gatekeeper
 needs a one-time bypass. Pick whichever path you prefer.
 
-### Homebrew
+### Homebrew (recommended)
 
-```bash
-brew install --cask yash-coded/tap/murmur
-```
-
-Murmur is ad-hoc-signed, so the installed app is quarantined like any download.
-Clear it once with the **Open Anyway** step below, or skip quarantine up front:
+Murmur is ad-hoc-signed, so install with quarantine skipped to avoid the
+Gatekeeper prompt on first launch:
 
 ```bash
 HOMEBREW_CASK_OPTS="--no-quarantine" brew install --cask yash-coded/tap/murmur
 ```
+
+Plain `brew install --cask yash-coded/tap/murmur` also works, but macOS will
+block the first launch with *"Apple could not verify Murmur is free of
+malware."* If that happens, click **Done** (not *Move to Trash*), then approve
+Murmur under **System Settings → Privacy & Security → Open Anyway**.
 
 (Recent Homebrew removed the bare `--no-quarantine` install flag; the
 `HOMEBREW_CASK_OPTS` form above is the current equivalent.)
