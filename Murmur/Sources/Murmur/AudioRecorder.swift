@@ -5,10 +5,22 @@ import AVFoundation
 final class AudioRecorder {
     static let sampleRate: Double = 16000
 
+    /// Called on the audio thread with a 0...1 loudness for each captured chunk,
+    /// driving the live waveform. Hop to the main actor before touching UI.
+    var onLevel: ((Float) -> Void)?
+
     private let engine = AVAudioEngine()
     private var samples: [Float] = []
     private let samplesLock = NSLock()
     private var converter: AVAudioConverter?
+
+    /// Root-mean-square loudness of a chunk, clamped to 0...1 — a perceptual
+    /// enough signal for the waveform without per-bar peak spikiness.
+    static func level(of samples: [Float]) -> Float {
+        guard !samples.isEmpty else { return 0 }
+        let meanSquare = samples.reduce(Float(0)) { $0 + $1 * $1 } / Float(samples.count)
+        return min(1, meanSquare.squareRoot())
+    }
 
     func start() throws {
         samplesLock.withLock { samples = [] }
@@ -65,5 +77,6 @@ final class AudioRecorder {
         guard error == nil, let channel = out.floatChannelData else { return }
         let chunk = Array(UnsafeBufferPointer(start: channel[0], count: Int(out.frameLength)))
         samplesLock.withLock { samples.append(contentsOf: chunk) }
+        onLevel?(Self.level(of: chunk))
     }
 }

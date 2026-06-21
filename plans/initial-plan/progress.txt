@@ -3,3 +3,5 @@
 2026-06-11 | slice-01 | done — unit+integration tests pass, model download/reuse verified, app launches; human mic/paste verification pending (HITL)
 2026-06-11 | slice-02 | started
 2026-06-11 | slice-02 | done — 21 new unit tests, full suite passes, app launch smoke OK; live API cleanup pending a real key (HITL), fallback path verified
+2026-06-20 | slice-03 | started
+2026-06-20 | slice-03 | done — floating waveform pill (non-activating NSPanel + live RMS waveform); 24 new unit tests, full suite 59/59, app launch smoke OK; live visual/paste-while-visible pending HITL

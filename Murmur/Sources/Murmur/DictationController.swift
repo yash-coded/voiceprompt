@@ -15,6 +15,7 @@ final class DictationController {
     private let transcriber = Transcriber()
     private let paster = TranscriptPaster()
     private let cleaner: TranscriptCleaner = OpenAICleaner()
+    private let pill = WaveformPillController()
 
     private var monitor: Any?
     private var holdTimer: DispatchWorkItem?
@@ -30,8 +31,15 @@ final class DictationController {
     private static let rightOptionKeyCode: UInt16 = 61
 
     func start() {
+        pill.installFloatingPanel()
         stateMachine.onStateChange = { [weak self] newState in
-            Task { @MainActor in self?.state = newState }
+            Task { @MainActor in
+                self?.state = newState
+                self?.pill.update(for: newState)
+            }
+        }
+        recorder.onLevel = { [weak self] level in
+            Task { @MainActor in self?.pill.push(level: level) }
         }
         monitor = NSEvent.addGlobalMonitorForEvents(matching: .flagsChanged) { [weak self] event in
             guard event.keyCode == Self.rightOptionKeyCode else { return }
