@@ -17,7 +17,7 @@ cask "murmur" do
   desc "Hold-to-talk dictation with local transcription and AI cleanup"
   homepage "https://github.com/yash-coded/voiceprompt"
 
-  depends_on macos: ">= :sequoia"
+  depends_on macos: :sequoia
   depends_on arch: :arm64
 
   app "Murmur.app"
