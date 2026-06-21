@@ -13,7 +13,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if !Settings.shared.onboardingCompleted {
             Self.onboarding.show()
         } else {
-            AVCaptureDevice.requestAccess(for: .audio) { _ in }
+            // Async form hops executors correctly; the completion-handler form
+            // is inferred @MainActor and SIGTRAPs when TCC calls back off-main.
+            Task { _ = await AVCaptureDevice.requestAccess(for: .audio) }
         }
     }
 }

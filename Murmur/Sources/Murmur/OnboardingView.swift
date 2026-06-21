@@ -108,8 +108,9 @@ private struct MicrophoneStep: View {
                     .foregroundStyle(.orange)
             default:
                 Button("Grant Microphone Access") {
-                    AVCaptureDevice.requestAccess(for: .audio) { granted in
-                        Task { @MainActor in status = granted ? .authorized : .denied }
+                    Task {
+                        let granted = await AVCaptureDevice.requestAccess(for: .audio)
+                        status = granted ? .authorized : .denied
                     }
                 }
                 .controlSize(.large)
