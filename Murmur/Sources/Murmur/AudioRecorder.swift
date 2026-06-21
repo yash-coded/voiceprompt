@@ -33,6 +33,15 @@ final class AudioRecorder {
         let input = engine.inputNode
         applyPreferredDevice(to: input)
         let inputFormat = input.outputFormat(forBus: 0)
+        // A 0-channel / 0-rate input format means the mic is unavailable (e.g.
+        // permission not granted). installTap would then throw an uncatchable
+        // Obj-C exception, so reject it up front as a normal Swift error.
+        guard inputFormat.channelCount > 0, inputFormat.sampleRate > 0 else {
+            throw NSError(
+                domain: "Murmur", code: 2,
+                userInfo: [NSLocalizedDescriptionKey:
+                    "Microphone unavailable — grant Microphone access to Murmur in System Settings → Privacy & Security."])
+        }
         guard
             let targetFormat = AVAudioFormat(
                 commonFormat: .pcmFormatFloat32,
