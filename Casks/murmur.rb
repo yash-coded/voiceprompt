@@ -10,8 +10,8 @@
 # Per release: bump `version` and replace `sha256` with the value printed by
 # scripts/build-dmg.sh (or `shasum -a 256` of the published .dmg).
 cask "murmur" do
-  version "0.1.2"
-  sha256 "385600e0fdf80bad60b04dfbf524f7837f25ebfba6ec216b092f8a06383b28f1"
+  version "0.1.3"
+  sha256 "67a960e84720ce9f480f50417fa8962cafec26100141ed00f668b1fc0d5946f3"
 
   url "https://github.com/yash-coded/voiceprompt/releases/download/v#{version}/Murmur-#{version}.dmg"
   name "Murmur"
