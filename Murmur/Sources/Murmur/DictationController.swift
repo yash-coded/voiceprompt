@@ -12,6 +12,7 @@ final class DictationController {
 
     private let settings: Settings
     private let dictionary: DictionaryStore
+    private let cleanupModes: CleanupModeStore
     private let stateMachine = HotkeyStateMachine()
     private let recorder = AudioRecorder()
     private let transcriber = Transcriber()
@@ -19,9 +20,11 @@ final class DictationController {
     private let cleaner: TranscriptCleaner = OpenAICleaner()
     private let pill = WaveformPillController()
 
-    init(settings: Settings = .shared, dictionary: DictionaryStore = .shared) {
+    init(settings: Settings = .shared, dictionary: DictionaryStore = .shared,
+         cleanupModes: CleanupModeStore = .shared) {
         self.settings = settings
         self.dictionary = dictionary
+        self.cleanupModes = cleanupModes
     }
 
     private var monitor: Any?
@@ -30,6 +33,7 @@ final class DictationController {
     /// Cleanup context captured at key-press time, while the target app
     /// still has focus and the clipboard is untouched.
     private var capturedMode: CleanMode = .general
+    private var capturedBody: String = CleanupPrompts.defaultBody(for: .general)
     private var capturedClipboard: String = ""
     private var capturedApp: String = ""
 
@@ -75,9 +79,12 @@ final class DictationController {
 
     private func dispatch(_ event: HotkeyEvent) {
         if event == .pressed {
-            capturedMode = CleanModeDetector.frontmostMode()
+            let app = NSWorkspace.shared.frontmostApplication
+            capturedMode = cleanupModes.mode(forBundleID: app?.bundleIdentifier ?? "",
+                                             appName: app?.localizedName ?? "")
+            capturedBody = cleanupModes.body(for: capturedMode)
             capturedClipboard = NSPasteboard.general.string(forType: .string) ?? ""
-            capturedApp = NSWorkspace.shared.frontmostApplication?.localizedName ?? ""
+            capturedApp = app?.localizedName ?? ""
         }
         let actions = stateMachine.handle(event, at: ProcessInfo.processInfo.systemUptime)
         for action in actions {
@@ -119,6 +126,7 @@ final class DictationController {
         }
         stateMachine.setProcessing()
         let mode = capturedMode
+        let body = capturedBody
         let clipboard = capturedClipboard
         let app = capturedApp
         let cleanupEnabled = settings.cleanupEnabled
@@ -134,7 +142,8 @@ final class DictationController {
                 let replaced = PersonalDictionary.applyReplacements(dictTerms, to: text)
                 let cleaned = cleanupEnabled
                     ? await cleaner.clean(replaced, mode: mode, clipboardContext: clipboard,
-                                          personalTerms: PersonalDictionary.promptTerms(dictTerms))
+                                          personalTerms: PersonalDictionary.promptTerms(dictTerms),
+                                          promptBody: body)
                     : replaced
                 paster.paste(cleaned)
                 HistoryStore.shared.record(

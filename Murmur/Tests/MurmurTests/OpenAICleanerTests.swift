@@ -68,6 +68,23 @@ private func okResponse(content: String) -> (Data, URLResponse) {
         #expect(messages[0]["content"]!.contains("Murmur, Parakeet"))
     }
 
+    @Test func customPromptBodyFlowsIntoSystemPrompt() async throws {
+        let captured = Captured()
+        var cleaner = OpenAICleaner()
+        cleaner.apiKeyProvider = { "sk-test" }
+        cleaner.transport = { request in
+            await captured.set(request)
+            return okResponse(content: "ok")
+        }
+        _ = await cleaner.clean("hello", mode: .technical, clipboardContext: "",
+                                personalTerms: [], promptBody: "Custom mode instructions.")
+
+        let request = await captured.get()
+        let body = try JSONSerialization.jsonObject(with: request!.httpBody!) as! [String: Any]
+        let messages = body["messages"] as! [[String: String]]
+        #expect(messages[0]["content"]!.contains("Custom mode instructions."))
+    }
+
     @Test func noKeyReturnsRawTranscript() async {
         var cleaner = OpenAICleaner()
         cleaner.apiKeyProvider = { nil }

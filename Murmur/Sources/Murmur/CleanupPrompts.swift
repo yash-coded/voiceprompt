@@ -72,10 +72,16 @@ enum CleanupPrompts {
             """,
     ]
 
+    /// The shipped instruction text for a mode, used as the editor's reset
+    /// target and the default when the user hasn't customised the mode.
+    static func defaultBody(for mode: CleanMode) -> String { promptBodies[mode]! }
+
     /// Static per-mode system message (identical across requests → cacheable).
     /// `personalTerms` are the user's plain dictionary entries; they are listed
-    /// in every mode so their spelling and casing survive cleanup.
-    static func systemPrompt(for mode: CleanMode, personalTerms: [String] = []) -> String {
+    /// in every mode so their spelling and casing survive cleanup. `promptBody`
+    /// overrides the mode's built-in instructions when the user has edited them.
+    static func systemPrompt(for mode: CleanMode, personalTerms: [String] = [],
+                             promptBody: String? = nil) -> String {
         var parts: [String] = []
         if modesWithVocabulary.contains(mode) {
             parts.append(vocabularyBlock)
@@ -84,7 +90,7 @@ enum CleanupPrompts {
             parts.append("Also preserve these personal terms exactly as written: "
                 + personalTerms.joined(separator: ", ") + ".\n\n")
         }
-        parts.append(promptBodies[mode]!)
+        parts.append(promptBody ?? promptBodies[mode]!)
         return parts.joined()
     }
 

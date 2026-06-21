@@ -24,4 +24,18 @@ import Testing
         // Bundle map hit takes precedence over a name-substring match.
         #expect(CleanModeDetector.mode(forBundleID: "com.apple.mail", appName: "Mail") == .professional)
     }
+
+    @Test func overrideWinsOverBuiltInAndNameFallback() {
+        let overrides = ["com.apple.Terminal": CleanMode.casual,
+                         "com.example.x": CleanMode.technical]
+        // Override beats the built-in bundle map.
+        #expect(CleanModeDetector.mode(forBundleID: "com.apple.Terminal", appName: "Terminal",
+                                       overrides: overrides) == .casual)
+        // Override beats the name-substring fallback ("SuperMail" → professional).
+        #expect(CleanModeDetector.mode(forBundleID: "com.example.x", appName: "SuperMail Pro",
+                                       overrides: overrides) == .technical)
+        // No override → unchanged behaviour.
+        #expect(CleanModeDetector.mode(forBundleID: "com.apple.MobileSMS", appName: "Messages",
+                                       overrides: overrides) == .casual)
+    }
 }

@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// The five sidebar destinations. History, Dictionary, and Settings are
-/// functional; the rest are placeholders that later slices (07–08) fill in.
+/// The five sidebar destinations. Only Stats is still a placeholder that a
+/// later slice (08) fills in; the rest are functional.
 enum SidebarSection: String, CaseIterable, Identifiable {
     case history = "History"
     case dictionary = "Dictionary"
@@ -40,6 +40,8 @@ struct MainWindow: View {
                 HistoryView(store: .shared)
             case .dictionary:
                 DictionaryView(store: .shared)
+            case .cleanupModes:
+                CleanupModesView(store: .shared)
             case .settings:
                 SettingsView(settings: settings)
             default:

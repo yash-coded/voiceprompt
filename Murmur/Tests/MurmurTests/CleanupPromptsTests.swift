@@ -31,6 +31,21 @@ import Testing
         #expect(CleanupPrompts.systemPrompt(for: .technical) == CleanupPrompts.systemPrompt(for: .technical))
     }
 
+    @Test func defaultBodyMatchesBuiltInPrompt() {
+        // The default body is the built-in instructions for that mode.
+        #expect(CleanupPrompts.systemPrompt(for: .technical)
+            .contains(CleanupPrompts.defaultBody(for: .technical)))
+    }
+
+    @Test func customPromptBodyReplacesBuiltInInstructions() {
+        let custom = "Just uppercase everything."
+        let prompt = CleanupPrompts.systemPrompt(for: .technical, promptBody: custom)
+        #expect(prompt.contains(custom))
+        #expect(!prompt.contains(CleanupPrompts.defaultBody(for: .technical)))
+        // Vocabulary block is still present (technical mode includes it).
+        #expect(prompt.contains("Software engineering vocabulary"))
+    }
+
     @Test func userMessageWithoutClipboard() {
         let msg = CleanupPrompts.userMessage(transcript: "hello world", clipboardContext: "")
         #expect(msg == "Transcript: hello world")

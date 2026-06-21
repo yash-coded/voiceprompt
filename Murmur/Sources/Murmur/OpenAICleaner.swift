@@ -4,7 +4,16 @@ import Foundation
 /// Implementations never throw: on any failure they return the raw transcript.
 protocol TranscriptCleaner: Sendable {
     func clean(_ transcript: String, mode: CleanMode, clipboardContext: String,
-               personalTerms: [String]) async -> String
+               personalTerms: [String], promptBody: String) async -> String
+}
+
+extension TranscriptCleaner {
+    /// Convenience for callers that want the mode's built-in instructions.
+    func clean(_ transcript: String, mode: CleanMode, clipboardContext: String,
+               personalTerms: [String] = []) async -> String {
+        await clean(transcript, mode: mode, clipboardContext: clipboardContext,
+                    personalTerms: personalTerms, promptBody: CleanupPrompts.defaultBody(for: mode))
+    }
 }
 
 /// Cleans transcripts via OpenAI gpt-5-mini. Gracefully degrades: missing
@@ -24,7 +33,7 @@ struct OpenAICleaner: TranscriptCleaner {
     }
 
     func clean(_ transcript: String, mode: CleanMode, clipboardContext: String,
-               personalTerms: [String] = []) async -> String {
+               personalTerms: [String] = [], promptBody: String) async -> String {
         guard !transcript.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
               let apiKey = apiKeyProvider(), !apiKey.isEmpty else {
             return transcript
@@ -37,7 +46,7 @@ struct OpenAICleaner: TranscriptCleaner {
         let body: [String: Any] = [
             "model": Self.model,
             "messages": [
-                ["role": "system", "content": CleanupPrompts.systemPrompt(for: mode, personalTerms: personalTerms)],
+                ["role": "system", "content": CleanupPrompts.systemPrompt(for: mode, personalTerms: personalTerms, promptBody: promptBody)],
                 ["role": "user", "content": CleanupPrompts.userMessage(
                     transcript: transcript, clipboardContext: clipboardContext)],
             ],
