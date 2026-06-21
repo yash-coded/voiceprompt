@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// The five sidebar destinations. Only Settings is functional in this slice;
-/// the rest are placeholders that later slices (05–08) fill in.
+/// The five sidebar destinations. History and Settings are functional; the
+/// rest are placeholders that later slices (06–08) fill in.
 enum SidebarSection: String, CaseIterable, Identifiable {
     case history = "History"
     case dictionary = "Dictionary"
@@ -36,6 +36,8 @@ struct MainWindow: View {
             .navigationSplitViewColumnWidth(min: 180, ideal: 200)
         } detail: {
             switch section {
+            case .history:
+                HistoryView(store: .shared)
             case .settings:
                 SettingsView(settings: settings)
             default:

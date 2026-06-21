@@ -1,6 +1,6 @@
 # 05 — History
 
-Status: ready
+Status: done
 Type: AFK
 Blocked by: 04
 
@@ -23,3 +23,10 @@ The History sidebar section becomes functional: a reverse-chronological list of 
 - Re-paste / re-clean actions on history entries.
 
 ## Comments
+- 2026-06-20: SQLite-backed `HistoryStore` (system `import SQLite3`, no new dep)
+  in Application Support; `record()` enforces retention inline (off → no write,
+  7d/30d prune on write, forever never prunes); switching to off never wipes
+  existing rows. `HistoryView` lists newest-first with `.searchable` across raw +
+  cleaned, per-row copy raw / copy cleaned / delete, and a Clear All toolbar
+  button. Controller captures the frontmost app name at press time and records
+  after paste. 13 new unit tests (store + search). Live UI/copy/delete pending HITL.

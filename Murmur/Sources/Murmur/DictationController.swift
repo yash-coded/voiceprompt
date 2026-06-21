@@ -29,6 +29,7 @@ final class DictationController {
     /// still has focus and the clipboard is untouched.
     private var capturedMode: CleanMode = .general
     private var capturedClipboard: String = ""
+    private var capturedApp: String = ""
 
     /// Recordings shorter than this are accidental taps — discard, no paste.
     static let minimumClipDuration: TimeInterval = 1.0
@@ -74,6 +75,7 @@ final class DictationController {
         if event == .pressed {
             capturedMode = CleanModeDetector.frontmostMode()
             capturedClipboard = NSPasteboard.general.string(forType: .string) ?? ""
+            capturedApp = NSWorkspace.shared.frontmostApplication?.localizedName ?? ""
         }
         let actions = stateMachine.handle(event, at: ProcessInfo.processInfo.systemUptime)
         for action in actions {
@@ -116,7 +118,9 @@ final class DictationController {
         stateMachine.setProcessing()
         let mode = capturedMode
         let clipboard = capturedClipboard
+        let app = capturedApp
         let cleanupEnabled = settings.cleanupEnabled
+        let retention = settings.historyRetention
         Task { [transcriber, paster, cleaner] in
             defer { stateMachine.setIdle() }
             do {
@@ -126,6 +130,9 @@ final class DictationController {
                     ? await cleaner.clean(text, mode: mode, clipboardContext: clipboard)
                     : text
                 paster.paste(cleaned)
+                HistoryStore.shared.record(
+                    raw: text, cleaned: cleanupEnabled ? cleaned : nil,
+                    targetApp: app, mode: mode, retention: retention)
             } catch {
                 NSLog("Murmur: transcription failed: \(error)")
             }
