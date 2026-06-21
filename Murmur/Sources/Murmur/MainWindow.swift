@@ -1,7 +1,6 @@
 import SwiftUI
 
-/// The five sidebar destinations. Only Stats is still a placeholder that a
-/// later slice (08) fills in; the rest are functional.
+/// The five sidebar destinations, all functional.
 enum SidebarSection: String, CaseIterable, Identifiable {
     case history = "History"
     case dictionary = "Dictionary"
@@ -42,24 +41,12 @@ struct MainWindow: View {
                 DictionaryView(store: .shared)
             case .cleanupModes:
                 CleanupModesView(store: .shared)
+            case .stats:
+                StatsView(store: .shared, historyEnabled: settings.historyRetention != .off)
             case .settings:
                 SettingsView(settings: settings)
-            default:
-                ComingSoonView(section: section)
             }
         }
         .frame(minWidth: 640, minHeight: 440)
-    }
-}
-
-/// Placeholder shown for sections that later slices implement.
-private struct ComingSoonView: View {
-    let section: SidebarSection
-
-    var body: some View {
-        ContentUnavailableView(
-            section.rawValue,
-            systemImage: section.systemImage,
-            description: Text("Coming soon."))
     }
 }

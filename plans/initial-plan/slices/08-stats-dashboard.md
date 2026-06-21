@@ -1,6 +1,6 @@
 # 08 — Stats Dashboard
 
-Status: ready
+Status: done
 Type: AFK
 Blocked by: 05
 
@@ -22,3 +22,13 @@ When history is turned off (or empty), the section shows an explanatory empty st
 - Goals, notifications, or gamification beyond the streak number.
 
 ## Comments
+2026-06-21 — Implemented as a pure `DictationStats.compute([HistoryEntry])` core
+(word count from the raw transcript, time saved = words×(1/40−1/150) min, streak
+= consecutive active days ending today or yesterday, per-day word totals) plus a
+thin `StatsView`. Words counted from raw = what the user spoke. Streak grants a
+"haven't dictated yet today" grace so a mid-morning streak isn't shown as broken.
+Chart uses Swift Charts (last 30 active days). Empty state distinguishes history
+off vs enabled-but-empty. The 40/150 wpm baselines are shown as a caption. Stats
+recompute from the observable HistoryStore, so the chart updates after each new
+dictation. Removed the now-unused ComingSoonView placeholder. 10 new tests, full
+suite 118/118, app launch smoke OK; live UI/visual pending HITL.
